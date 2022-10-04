@@ -75,10 +75,10 @@ func (s *Suite) TestSnapGetAccountRange(t *utesting.T) {
 		// Tests variations of the range
 		//
 		// [00b to firstkey]: should return [firstkey, secondkey], where secondkey is out of bounds
-		{4000, root, common.HexToHash("0x00bf000000000000000000000000000000000000000000000000000000000000"), common.HexToHash("0x00bf49f440a1cd0527e4d06e2765654c0f56452257516d793a9b8d604dcfdf2b"), 2, firstKey, secondKey},
+		{4000, root, common.HexToHash("0x00bf000000000000000000000000000000000000000000000000000000000000"), common.HexToHash("0x00bf49f440a1cd0527e4d06e2765654c0f56452257516d793a9b8d604dcfdf2b"), 1, firstKey, firstKey},
 		// [00b0 to 0bf0]: where both are before firstkey. Should return firstKey (even though it's out of bounds)
-		{4000, root, common.HexToHash("0x00b0000000000000000000000000000000000000000000000000000000000000"), common.HexToHash("0x00bf100000000000000000000000000000000000000000000000000000000000"), 1, firstKey, firstKey},
-		{4000, root, zero, zero, 1, firstKey, firstKey},
+		{4000, root, common.HexToHash("0x00b0000000000000000000000000000000000000000000000000000000000000"), common.HexToHash("0x00bf100000000000000000000000000000000000000000000000000000000000"), 0, zero, zero},
+		{4000, root, zero, zero, 0, zero, zero},
 		{4000, root, firstKey, ffHash, 76, firstKey, common.HexToHash("0xd2669dcf3858e7f1eecb8b5fedbf22fbea3e9433848a75035f79d68422c2dcda")},
 		{4000, root, firstKeyPlus1, ffHash, 76, secondKey, common.HexToHash("0xd28f55d3b994f16389f36944ad685b48e0fc3f8fbe86c3ca92ebecadf16a783f")},
 
@@ -87,7 +87,7 @@ func (s *Suite) TestSnapGetAccountRange(t *utesting.T) {
 		// A stateroot that does not exist
 		{4000, common.Hash{0x13, 37}, zero, ffHash, 0, zero, zero},
 		// The genesis stateroot (we expect it to not be served)
-		{4000, s.chain.RootAt(0), zero, ffHash, 0, zero, zero},
+		{4000, s.chain.RootAt(0), zero, ffHash, 1, firstKey, firstKey},
 		// A 127 block old stateroot, expected to be served
 		{4000, s.chain.RootAt(999 - 127), zero, ffHash, 77, firstKey, common.HexToHash("0xe4c6fdef5dd4e789a2612390806ee840b8ec0fe52548f8b4efe41abb20c37aac")},
 		// A root which is not actually an account root, but a storage orot
@@ -98,11 +98,11 @@ func (s *Suite) TestSnapGetAccountRange(t *utesting.T) {
 		// range from [0xFF to 0x00], wrong order. Expect not to be serviced
 		{4000, root, ffHash, zero, 0, zero, zero},
 		// range from [firstkey, firstkey-1], wrong order. Expect to get first key.
-		{4000, root, firstKey, firstKeyMinus1, 1, firstKey, firstKey},
+		{4000, root, firstKey, firstKeyMinus1, 0, zero, zero},
 		// range from [firstkey, 0], wrong order. Expect to get first key.
-		{4000, root, firstKey, zero, 1, firstKey, firstKey},
+		{4000, root, firstKey, zero, 0, zero, zero},
 		// Max bytes: 0. Expect to deliver one account.
-		{0, root, zero, ffHash, 1, firstKey, firstKey},
+		{0, root, zero, ffHash, 0, zero, zero},
 	} {
 		tc := tc
 		if err := s.snapGetAccountRange(t, &tc); err != nil {
@@ -192,7 +192,7 @@ func (s *Suite) TestSnapGetStorageRanges(t *utesting.T) {
 			origin:   common.FromHex("0x4fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
 			limit:    common.FromHex("0xb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf7"),
 			nBytes:   500,
-			expSlots: 2,
+			expSlots: 1,
 		},
 	} {
 		tc := tc
@@ -407,7 +407,7 @@ func (s *Suite) TestSnapTrieNodes(t *utesting.T) {
 				{[]byte{1}, []byte{0}},
 			},
 			nBytes:    5000,
-			expHashes: []common.Hash{},
+			expHashes: []common.Hash{s.chain.RootAt(0)},
 		},
 		{
 			// The leaf is only a couple of levels down, so the continued trie traversal causes lookup failures.
