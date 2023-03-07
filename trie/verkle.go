@@ -368,7 +368,7 @@ func deserializeVerkleProof(vp *verkle.VerkleProof, rootC *verkle.Point, statedi
 					return nil, nil, nil, nil, fmt.Errorf("could not find correct value at %x in tree rebuilt from proof: %x != %x", key, val, *suffixdiff.CurrentValue)
 				}
 			} else {
-				if len(suffixdiff.CurrentValue) != 0 {
+				if suffixdiff.CurrentValue != nil && len(suffixdiff.CurrentValue) != 0 {
 					return nil, nil, nil, nil, fmt.Errorf("could not find correct value at %x in tree rebuilt from proof: %x != %x", key, val, *suffixdiff.CurrentValue)
 				}
 			}
