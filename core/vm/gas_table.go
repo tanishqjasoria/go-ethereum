@@ -18,6 +18,7 @@ package vm
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -121,6 +122,7 @@ func gasSLoad(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySiz
 func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	// Apply the witness access costs, err is nil
 	accessGas, _ := gasSLoad(evm, contract, stack, mem, memorySize)
+	log.Info("SSTORE GAS", "accessGas", accessGas)
 	var (
 		y, x    = stack.Back(1), stack.Back(0)
 		current = evm.StateDB.GetState(contract.Address(), x.Bytes32())
@@ -136,11 +138,14 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 		// 3. From a non-zero to a non-zero                         (CHANGE)
 		switch {
 		case current == (common.Hash{}) && y.Sign() != 0: // 0 => non 0
+			fmt.Println("SSTORE GAS", "SstoreSetGas", params.SstoreSetGas)
 			return params.SstoreSetGas + accessGas, nil
 		case current != (common.Hash{}) && y.Sign() == 0: // non 0 => 0
+			log.Info("SSTORE GAS", "SstoreClearGas", params.SstoreClearGas)
 			evm.StateDB.AddRefund(params.SstoreRefundGas)
 			return params.SstoreClearGas + accessGas, nil
 		default: // non 0 => non 0 (or 0 => 0)
+			log.Info("SSTORE GAS", "SstoreResetGas", params.SstoreResetGas)
 			return params.SstoreResetGas + accessGas, nil
 		}
 	}
@@ -171,6 +176,7 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 		if value == (common.Hash{}) { // delete slot (2.1.2b)
 			evm.StateDB.AddRefund(params.NetSstoreClearRefund)
 		}
+		log.Info("SSTORE GAS", "NetSstoreCleanGas", params.NetSstoreCleanGas)
 		return params.NetSstoreCleanGas, nil // write existing slot (2.1.2)
 	}
 	if original != (common.Hash{}) {
@@ -187,6 +193,7 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 			evm.StateDB.AddRefund(params.NetSstoreResetRefund)
 		}
 	}
+	log.Info("SSTORE GAS", "NetSstoreDirtyGas", params.NetSstoreDirtyGas)
 	return params.NetSstoreDirtyGas, nil
 }
 

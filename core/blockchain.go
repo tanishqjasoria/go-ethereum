@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"os"
 	"runtime"
 	"sort"
 	"strings"
@@ -2227,6 +2228,10 @@ func (bc *BlockChain) SetCanonical(head *types.Block) (common.Hash, error) {
 		context = append(context, []interface{}{"age", common.PrettyAge(timestamp)}...)
 	}
 	log.Info("Chain head was updated", context...)
+
+	if head.Number().Int64() == 538 {
+		os.Exit(1)
+	}
 	return head.Hash(), nil
 }
 

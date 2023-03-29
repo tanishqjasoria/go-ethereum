@@ -207,8 +207,12 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		// Get the operation from the jump table and validate the stack to ensure there are
 		// enough stack items available to perform the operation.
 		op = contract.GetOp(pc)
+		log.Info("Gas Available Current", "gas", contract.Gas)
+		log.Info("OpCode", "symbol", op)
 		operation := in.cfg.JumpTable[op]
 		cost = operation.constantGas // For tracing
+		log.Info("OpCode", "symbol", op, "gas", cost)
+
 		// Validate stack
 		if sLen := stack.len(); sLen < operation.minStack {
 			return nil, &ErrStackUnderflow{stackLen: sLen, required: operation.minStack}
@@ -244,6 +248,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			if err != nil || !contract.UseGas(dynamicCost) {
 				return nil, ErrOutOfGas
 			}
+			log.Info("OpCode", "symbol", op, "dynamicCost", dynamicCost)
 			// Do tracing before memory expansion
 			if in.cfg.Debug {
 				in.cfg.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)

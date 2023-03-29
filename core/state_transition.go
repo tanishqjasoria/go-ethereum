@@ -18,6 +18,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/log"
 	"math"
 	"math/big"
 
@@ -317,6 +318,8 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 
 	// Check clauses 4-5, subtract intrinsic gas if everything is correct
 	gas, err := IntrinsicGas(st.data, st.msg.AccessList(), contractCreation, rules.IsHomestead, rules.IsIstanbul)
+	log.Info("Intrinsic Gas", "gas", gas)
+
 	if err != nil {
 		return nil, err
 	}
@@ -327,7 +330,10 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 		targetAddr := msg.To()
 		originAddr := msg.From()
 
+		totalAccessGas := uint64(0)
+
 		statelessGasOrigin := st.evm.Accesses.TouchTxOriginAndComputeGas(originAddr.Bytes())
+		totalAccessGas += statelessGasOrigin
 		if !tryConsumeGas(&st.gas, statelessGasOrigin) {
 			return nil, fmt.Errorf("%w: Insufficient funds to cover witness access costs for transaction: have %d, want %d", ErrInsufficientBalanceWitness, st.gas, gas)
 		}
@@ -335,6 +341,7 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 
 		if msg.To() != nil {
 			statelessGasDest := st.evm.Accesses.TouchTxExistingAndComputeGas(targetAddr.Bytes(), msg.Value().Sign() != 0)
+			totalAccessGas += statelessGasDest
 			if !tryConsumeGas(&st.gas, statelessGasDest) {
 				return nil, fmt.Errorf("%w: Insufficient funds to cover witness access costs for transaction: have %d, want %d", ErrInsufficientBalanceWitness, st.gas, gas)
 			}
@@ -343,7 +350,9 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 			st.evm.StateDB.GetCodeSize(*targetAddr)
 		} else {
 			contractAddr := crypto.CreateAddress(originAddr, originNonce)
-			if !tryConsumeGas(&st.gas, st.evm.Accesses.TouchAndChargeContractCreateInit(contractAddr.Bytes(), msg.Value().Sign() != 0)) {
+			contractInitGas := st.evm.Accesses.TouchAndChargeContractCreateInit(contractAddr.Bytes(), msg.Value().Sign() != 0)
+			log.Info("Contract Init Gas", "gas", contractInitGas)
+			if !tryConsumeGas(&st.gas, contractInitGas) {
 				return nil, fmt.Errorf("%w: Insufficient funds to cover witness access costs for transaction: have %d, want %d", ErrInsufficientBalanceWitness, st.gas, gas)
 			}
 		}
@@ -351,7 +360,9 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 		if st.gas < gas {
 			return nil, fmt.Errorf("%w: Insufficient funds to cover witness access costs for transaction: have %d, want %d", ErrInsufficientBalanceWitness, st.gas, gas)
 		}
+		log.Info("Tx Access Gas ", "gas", totalAccessGas)
 	}
+
 	st.gas -= gas
 
 	// Check clause 6
@@ -368,12 +379,15 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 		vmerr error // vm errors do not effect consensus and are therefore not assigned to err
 	)
 	if contractCreation {
+		log.Info("Contract Creation")
 		ret, _, st.gas, vmerr = st.evm.Create(sender, st.data, st.gas, st.value)
 	} else {
 		// Increment the nonce for the next transaction
 		st.state.SetNonce(msg.From(), st.state.GetNonce(sender.Address())+1)
 		ret, st.gas, vmerr = st.evm.Call(sender, st.to(), st.data, st.gas, st.value)
 	}
+
+	log.Info("Gas After Exec Complete", "gas", st.gas)
 
 	if !rules.IsLondon {
 		// Before EIP-3529: refunds were capped to gasUsed / 2
@@ -397,6 +411,7 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 		st.state.AddBalance(st.evm.Context.Coinbase, fee)
 	}
 
+	log.Info("Tx Gas Used", "gas", st.gasUsed())
 	return &ExecutionResult{
 		UsedGas:    st.gasUsed(),
 		Err:        vmerr,

@@ -18,6 +18,7 @@ package vm
 
 import (
 	"errors"
+	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -27,6 +28,7 @@ import (
 
 func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 	return func(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
+		log.Info("makeGasSStoreFunc")
 		// If we fail the minimum gas availability invariant, fail (0)
 		if contract.Gas <= params.SstoreSentryGasEIP2200 {
 			return 0, errors.New("not enough gas for reentrancy sentry")
@@ -41,6 +43,7 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 		// Check slot presence in the access list
 		if addrPresent, slotPresent := evm.StateDB.SlotInAccessList(contract.Address(), slot); !slotPresent {
 			cost = params.ColdSloadCostEIP2929
+			log.Info("SSTORE GAS", "ColdSloadCostEIP2929", params.ColdSloadCostEIP2929, "cost", cost)
 			// If the caller cannot afford the cost, this change will be rolled back
 			evm.StateDB.AddSlotToAccessList(contract.Address(), slot)
 			if !addrPresent {
@@ -54,30 +57,39 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 
 		if evm.chainConfig.IsCancun(evm.Context.BlockNumber) {
 			index := trieUtils.GetTreeKeyStorageSlotWithEvaluatedAddress(contract.AddressPoint(), x)
-			cost += evm.Accesses.TouchAddressOnWriteAndComputeGas(index)
+			accessGas := evm.Accesses.TouchAddressOnWriteAndComputeGas(index)
+			cost += accessGas
+			log.Info("SSTORE GAS", "accessGas", accessGas, "cost", cost)
 		}
 
 		if current == value { // noop (1)
 			// EIP 2200 original clause:
 			//		return params.SloadGasEIP2200, nil
+			log.Info("SSTORE REturen GasCidt", "gas", cost+params.WarmStorageReadCostEIP2929)
 			return cost + params.WarmStorageReadCostEIP2929, nil // SLOAD_GAS
 		}
 		original := evm.StateDB.GetCommittedState(contract.Address(), x.Bytes32())
 		if original == current {
 			if original == (common.Hash{}) { // create slot (2.1.1)
+				log.Info("SSTORE REturen GasCidt", "gas", cost+params.SstoreSetGasEIP2200)
 				return cost + params.SstoreSetGasEIP2200, nil
 			}
 			if value == (common.Hash{}) { // delete slot (2.1.2b)
+				log.Info("SSTORE GAS Refund", " ----", clearingRefund)
 				evm.StateDB.AddRefund(clearingRefund)
 			}
 			// EIP-2200 original clause:
 			//		return params.SstoreResetGasEIP2200, nil // write existing slot (2.1.2)
+			log.Info("SSTORE GAS", " EIP-2200", params.SstoreResetGasEIP2200-params.ColdSloadCostEIP2929)
+			log.Info("SSTORE REturen GasCidt", "gas", cost+(params.SstoreResetGasEIP2200-params.ColdSloadCostEIP2929))
 			return cost + (params.SstoreResetGasEIP2200 - params.ColdSloadCostEIP2929), nil // write existing slot (2.1.2)
 		}
 		if original != (common.Hash{}) {
 			if current == (common.Hash{}) { // recreate slot (2.2.1.1)
+				log.Info("SSTORE GAS Refund", " ----", clearingRefund)
 				evm.StateDB.SubRefund(clearingRefund)
 			} else if value == (common.Hash{}) { // delete slot (2.2.1.2)
+				log.Info("SSTORE GAS Refund", " ----", clearingRefund)
 				evm.StateDB.AddRefund(clearingRefund)
 			}
 		}
@@ -86,6 +98,7 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 				// EIP 2200 Original clause:
 				//evm.StateDB.AddRefund(params.SstoreSetGasEIP2200 - params.SloadGasEIP2200)
 				evm.StateDB.AddRefund(params.SstoreSetGasEIP2200 - params.WarmStorageReadCostEIP2929)
+				log.Info("SSTORE GAS Refund", " ----", params.SstoreSetGasEIP2200-params.WarmStorageReadCostEIP2929)
 			} else { // reset to original existing slot (2.2.2.2)
 				// EIP 2200 Original clause:
 				//	evm.StateDB.AddRefund(params.SstoreResetGasEIP2200 - params.SloadGasEIP2200)
@@ -93,10 +106,13 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 				// - SLOAD_GAS redefined as WARM_STORAGE_READ_COST
 				// Final: (5000 - COLD_SLOAD_COST) - WARM_STORAGE_READ_COST
 				evm.StateDB.AddRefund((params.SstoreResetGasEIP2200 - params.ColdSloadCostEIP2929) - params.WarmStorageReadCostEIP2929)
+				log.Info("SSTORE GAS Refund", " ----", (params.SstoreResetGasEIP2200-params.ColdSloadCostEIP2929)-params.WarmStorageReadCostEIP2929)
 			}
 		}
 		// EIP-2200 original clause:
 		//return params.SloadGasEIP2200, nil // dirty update (2.2)
+		log.Info("SSTORE GAS", "WarmStorageReadCostEIP2929", params.WarmStorageReadCostEIP2929)
+		log.Info("SSTORE REturen GasCidt", "gas", cost+params.WarmStorageReadCostEIP2929)
 		return cost + params.WarmStorageReadCostEIP2929, nil // dirty update (2.2)
 	}
 }
