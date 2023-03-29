@@ -17,6 +17,7 @@
 package vm
 
 import (
+	"github.com/ethereum/go-ethereum/log"
 	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -410,6 +411,7 @@ func touchChunkOnReadAndChargeGas(chunks trie.ChunkedCode, offset uint64, evals 
 		panic("overflow when adding gas")
 	}
 
+	log.Info("touchChunkOnReadAndChargeGas ", "index", index, "gas", statelessGasCharged)
 	return statelessGasCharged
 }
 
@@ -451,6 +453,7 @@ func touchEachChunksOnReadAndChargeGas(offset, size uint64, contract *Contract, 
 		}
 	}
 
+	log.Info("touchEachChunksOnReadAndChargeGas ", "gas", statelessGasCharged)
 	return statelessGasCharged
 }
 

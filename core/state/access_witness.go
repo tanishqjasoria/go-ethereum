@@ -18,6 +18,7 @@ package state
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/trie/utils"
 )
@@ -181,11 +182,15 @@ func (aw *AccessWitness) touchAddressAndChargeGas(addr []byte, isWrite bool) uin
 }
 
 func (aw *AccessWitness) TouchAddressOnWriteAndComputeGas(addr []byte) uint64 {
-	return aw.touchAddressAndChargeGas(addr, true)
+	gas := aw.touchAddressAndChargeGas(addr, true)
+	log.Info("TouchAddressOnWriteAndComputeGas ", "addr", addr, "gas", gas)
+	return gas
 }
 
 func (aw *AccessWitness) TouchAddressOnReadAndComputeGas(addr []byte) uint64 {
-	return aw.touchAddressAndChargeGas(addr, false)
+	gas := aw.touchAddressAndChargeGas(addr, false)
+	log.Info("TouchAddressOnReadAndComputeGas ", "addr", addr, "gas", gas)
+	return gas
 }
 
 // Merge is used to merge the witness that got generated during the execution
@@ -276,6 +281,7 @@ func (aw *AccessWitness) TouchAndChargeProofOfAbsence(addr []byte) uint64 {
 	gas += aw.TouchAddressOnReadAndComputeGas(cskey[:])
 	gas += aw.TouchAddressOnReadAndComputeGas(ckkey[:])
 	gas += aw.TouchAddressOnReadAndComputeGas(noncekey[:])
+	log.Info("TouchAndChargeProofOfAbsence ", "Addr", addr, "gas", gas)
 	return gas
 }
 
@@ -290,6 +296,7 @@ func (aw *AccessWitness) TouchAndChargeMessageCall(addr []byte) uint64 {
 	cskey[31] = utils.CodeSizeLeafKey
 	gas += aw.TouchAddressOnReadAndComputeGas(versionkey)
 	gas += aw.TouchAddressOnReadAndComputeGas(cskey[:])
+	log.Info("TouchAndChargeMessageCall ", "addr", addr, "gas", gas)
 	return gas
 }
 
@@ -297,6 +304,7 @@ func (aw *AccessWitness) TouchAndChargeValueTransfer(callerAddr, targetAddr []by
 	var gas uint64
 	gas += aw.TouchAddressOnWriteAndComputeGas(utils.GetTreeKeyBalance(callerAddr[:]))
 	gas += aw.TouchAddressOnWriteAndComputeGas(utils.GetTreeKeyBalance(targetAddr[:]))
+	log.Info("TouchAndChargeValueTransfer ", "callerAddr", callerAddr, "tragetAdd", targetAddr, "gas", gas)
 	return gas
 }
 
@@ -323,6 +331,7 @@ func (aw *AccessWitness) TouchAndChargeContractCreateInit(addr []byte, createSen
 		gas += aw.TouchAddressOnWriteAndComputeGas(balancekey[:])
 	}
 	gas += aw.TouchAddressOnWriteAndComputeGas(ckkey[:])
+	log.Info("TouchAndChargeContractCreateInit ", "addr", addr, "createSendValue", createSendsValue, "gas", gas)
 	return gas
 }
 
@@ -351,6 +360,7 @@ func (aw *AccessWitness) TouchAndChargeContractCreateCompleted(addr []byte, with
 	gas += aw.TouchAddressOnWriteAndComputeGas(cskey[:])
 	gas += aw.TouchAddressOnWriteAndComputeGas(ckkey[:])
 	gas += aw.TouchAddressOnWriteAndComputeGas(noncekey[:])
+	log.Info("TouchAndChargeContractCreateCompleted ", "Addre", addr, "gas", gas)
 	return gas
 }
 
@@ -377,6 +387,7 @@ func (aw *AccessWitness) TouchTxOriginAndComputeGas(originAddr []byte) uint64 {
 	gas += aw.TouchAddressOnWriteAndComputeGas(noncekey[:])
 	gas += aw.TouchAddressOnWriteAndComputeGas(balancekey[:])
 
+	log.Info("TouchTxOriginAndComputeGas ", "originAddr", originAddr, "gas", gas)
 	return gas
 }
 
@@ -406,5 +417,6 @@ func (aw *AccessWitness) TouchTxExistingAndComputeGas(targetAddr []byte, sendsVa
 	if sendsValue {
 		gas += aw.TouchAddressOnWriteAndComputeGas(balancekey[:])
 	}
+	log.Info("TouchTxExistingAndComputeGas ", "targetAddr", targetAddr, "sendsValue", sendsValue, "gas", gas)
 	return gas
 }

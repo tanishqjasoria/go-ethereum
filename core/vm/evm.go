@@ -17,6 +17,7 @@
 package vm
 
 import (
+	"github.com/ethereum/go-ethereum/log"
 	"math/big"
 	"sync/atomic"
 	"time"
@@ -204,7 +205,9 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 		if !isPrecompile && evm.chainRules.IsEIP158 && value.Sign() == 0 {
 			if evm.chainConfig.IsCancun(evm.Context.BlockNumber) {
 				// proof of absence
-				tryConsumeGas(&gas, evm.Accesses.TouchAndChargeProofOfAbsence(caller.Address().Bytes()))
+				gasUsed := evm.Accesses.TouchAndChargeProofOfAbsence(caller.Address().Bytes())
+				log.Info("ChargeProofOfAbsence", "gas", gasUsed)
+				tryConsumeGas(&gas, gasUsed)
 			}
 			// Calling a non existing account, don't do anything, but ping the tracer
 			if evm.Config.Debug {
@@ -518,7 +521,9 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	}
 
 	if err == nil && evm.chainConfig.IsCancun(evm.Context.BlockNumber) {
-		if !contract.UseGas(evm.Accesses.TouchAndChargeContractCreateCompleted(address.Bytes()[:], value.Sign() != 0)) {
+		gasUsedContractCreate := evm.Accesses.TouchAndChargeContractCreateCompleted(address.Bytes()[:], value.Sign() != 0)
+		log.Info("Contract Create Completed: ", "gas", gasUsedContractCreate)
+		if !contract.UseGas(gasUsedContractCreate) {
 			evm.StateDB.RevertToSnapshot(snapshot)
 			err = ErrOutOfGas
 		}

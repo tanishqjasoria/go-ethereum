@@ -134,6 +134,33 @@ func (t *VerkleTrie) TryUpdateAccount(key []byte, acc *types.StateAccount) error
 		return t.db.diskdb.Get(hash)
 	}
 
+	var ss []byte
+	copy(stem, ss)
+	fmt.Print("KA: ")
+	fmt.Println(stem)
+	fmt.Print("V: ")
+	fmt.Println(values[0][:])
+
+	fmt.Print("KA: ")
+	fmt.Println(stem)
+	fmt.Print("V: ")
+	fmt.Println(values[1][:])
+
+	fmt.Print("KA: ")
+	fmt.Println(stem)
+	fmt.Print("V: ")
+	fmt.Println(values[2][:])
+
+	fmt.Print("KA: ")
+	fmt.Println(stem)
+	fmt.Print("V: ")
+	fmt.Println(values[3][:])
+
+	fmt.Print("KA: ")
+	fmt.Println(stem)
+	fmt.Print("V: ")
+	fmt.Println(values[4][:])
+
 	switch root := t.root.(type) {
 	case *verkle.InternalNode:
 		err = root.InsertStem(stem, values, flusher)
@@ -152,6 +179,18 @@ func (trie *VerkleTrie) TryUpdateStem(key []byte, values [][]byte) error {
 	resolver := func(h []byte) ([]byte, error) {
 		return trie.db.diskdb.Get(h)
 	}
+
+	for i := 0; i < len(values); i++ {
+		if len(values[i]) == 0 {
+			continue
+		}
+		//key[31] = byte(i)
+		fmt.Print("K: ")
+		fmt.Println(append(key, byte(i)))
+		fmt.Print("V: ")
+		fmt.Println(values[i][:])
+	}
+
 	switch root := trie.root.(type) {
 	case *verkle.InternalNode:
 		return root.InsertStem(key, values, resolver)
@@ -170,6 +209,10 @@ func (trie *VerkleTrie) TryUpdate(address, key, value []byte) error {
 	k := utils.GetTreeKeyStorageSlotWithEvaluatedAddress(trie.pointCache.GetTreeKeyHeader(address), new(uint256.Int).SetBytes(key[:]))
 	var v [32]byte
 	copy(v[:], value[:])
+	fmt.Print("K: ")
+	fmt.Println(append(key))
+	fmt.Print("V: ")
+	fmt.Println(value[:])
 	return trie.root.Insert(k, v[:], func(h []byte) ([]byte, error) {
 		return trie.db.diskdb.Get(h)
 	})
