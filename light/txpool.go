@@ -23,15 +23,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/scroll-tech/go-ethereum/common"
+	"github.com/scroll-tech/go-ethereum/core"
+	"github.com/scroll-tech/go-ethereum/core/rawdb"
+	"github.com/scroll-tech/go-ethereum/core/state"
+	"github.com/scroll-tech/go-ethereum/core/types"
+	"github.com/scroll-tech/go-ethereum/ethdb"
+	"github.com/scroll-tech/go-ethereum/event"
+	"github.com/scroll-tech/go-ethereum/log"
+	"github.com/scroll-tech/go-ethereum/params"
+	"github.com/scroll-tech/go-ethereum/rollup/fees"
 )
 
 const (
@@ -69,6 +70,7 @@ type TxPool struct {
 
 	istanbul bool // Fork indicator whether we are in the istanbul stage.
 	eip2718  bool // Fork indicator whether we are in the eip2718 stage.
+	shanghai bool // Fork indicator whether we are in the shanghai stage.
 }
 
 // TxRelayBackend provides an interface to the mechanism that forwards transacions
@@ -315,6 +317,7 @@ func (pool *TxPool) setNewHead(head *types.Header) {
 	next := new(big.Int).Add(head.Number, big.NewInt(1))
 	pool.istanbul = pool.config.IsIstanbul(next)
 	pool.eip2718 = pool.config.IsBerlin(next)
+	pool.shanghai = pool.config.IsShanghai(next)
 }
 
 // Stop stops the light transaction pool
@@ -382,7 +385,7 @@ func (pool *TxPool) validateTx(ctx context.Context, tx *types.Transaction) error
 	}
 
 	// Should supply enough intrinsic gas
-	gas, err := core.IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, pool.istanbul)
+	gas, err := core.IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, pool.istanbul, pool.shanghai)
 	if err != nil {
 		return err
 	}
@@ -400,6 +403,13 @@ func (pool *TxPool) add(ctx context.Context, tx *types.Transaction) error {
 	if pool.pending[hash] != nil {
 		return fmt.Errorf("Known transaction (%x)", hash[:4])
 	}
+
+	if pool.config.Scroll.FeeVaultEnabled() {
+		if err := fees.VerifyFee(pool.signer, tx, pool.currentState(ctx)); err != nil {
+			return err
+		}
+	}
+
 	err := pool.validateTx(ctx, tx)
 	if err != nil {
 		return err

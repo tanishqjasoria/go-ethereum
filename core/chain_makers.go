@@ -20,14 +20,14 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/consensus/misc"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/scroll-tech/go-ethereum/common"
+	"github.com/scroll-tech/go-ethereum/consensus"
+	"github.com/scroll-tech/go-ethereum/consensus/misc"
+	"github.com/scroll-tech/go-ethereum/core/state"
+	"github.com/scroll-tech/go-ethereum/core/types"
+	"github.com/scroll-tech/go-ethereum/core/vm"
+	"github.com/scroll-tech/go-ethereum/ethdb"
+	"github.com/scroll-tech/go-ethereum/params"
 )
 
 // BlockGen creates blocks for testing.
@@ -132,7 +132,11 @@ func (b *BlockGen) Number() *big.Int {
 
 // BaseFee returns the EIP-1559 base fee of the block being generated.
 func (b *BlockGen) BaseFee() *big.Int {
-	return new(big.Int).Set(b.header.BaseFee)
+	if b.header.BaseFee != nil {
+		return new(big.Int).Set(b.header.BaseFee)
+	} else {
+		return big.NewInt(0)
+	}
 }
 
 // AddUncheckedReceipt forcefully adds a receipts to the block without a

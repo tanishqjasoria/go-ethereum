@@ -29,20 +29,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/internal/ethapi"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/scroll-tech/go-ethereum/common"
+	"github.com/scroll-tech/go-ethereum/common/hexutil"
+	"github.com/scroll-tech/go-ethereum/consensus"
+	"github.com/scroll-tech/go-ethereum/consensus/ethash"
+	"github.com/scroll-tech/go-ethereum/core"
+	"github.com/scroll-tech/go-ethereum/core/rawdb"
+	"github.com/scroll-tech/go-ethereum/core/state"
+	"github.com/scroll-tech/go-ethereum/core/types"
+	"github.com/scroll-tech/go-ethereum/core/vm"
+	"github.com/scroll-tech/go-ethereum/crypto"
+	"github.com/scroll-tech/go-ethereum/ethdb"
+	"github.com/scroll-tech/go-ethereum/internal/ethapi"
+	"github.com/scroll-tech/go-ethereum/params"
+	"github.com/scroll-tech/go-ethereum/rollup/fees"
+	"github.com/scroll-tech/go-ethereum/rpc"
 )
 
 var (
@@ -81,7 +82,7 @@ func newTestBackend(t *testing.T, n int, gspec *core.Genesis, generator func(i i
 		SnapshotLimit:     0,
 		TrieDirtyDisabled: true, // Archive mode
 	}
-	chain, err := core.NewBlockChain(backend.chaindb, cacheConfig, backend.chainConfig, backend.engine, vm.Config{}, nil, nil)
+	chain, err := core.NewBlockChain(backend.chaindb, cacheConfig, backend.chainConfig, backend.engine, vm.Config{}, nil, nil, false)
 	if err != nil {
 		t.Fatalf("failed to create tester chain: %v", err)
 	}
@@ -130,6 +131,10 @@ func (b *testBackend) ChainConfig() *params.ChainConfig {
 	return b.chainConfig
 }
 
+func (b *testBackend) CacheConfig() *core.CacheConfig {
+	return b.chain.CacheConfig()
+}
+
 func (b *testBackend) Engine() consensus.Engine {
 	return b.engine
 }
@@ -163,12 +168,16 @@ func (b *testBackend) StateAtTransaction(ctx context.Context, block *types.Block
 	for idx, tx := range block.Transactions() {
 		msg, _ := tx.AsMessage(signer, block.BaseFee())
 		txContext := core.NewEVMTxContext(msg)
-		context := core.NewEVMBlockContext(block.Header(), b.chain, nil)
+		context := core.NewEVMBlockContext(block.Header(), b.chain, b.chainConfig, nil)
 		if idx == txIndex {
 			return msg, context, statedb, nil
 		}
 		vmenv := vm.NewEVM(context, txContext, statedb, b.chainConfig, vm.Config{})
-		if _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(tx.Gas())); err != nil {
+		l1DataFee, err := fees.CalculateL1DataFee(tx, statedb)
+		if err != nil {
+			return nil, vm.BlockContext{}, nil, err
+		}
+		if _, err = core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(tx.Gas()), l1DataFee); err != nil {
 			return nil, vm.BlockContext{}, nil, fmt.Errorf("transaction %#x failed: %v", tx.Hash(), err)
 		}
 		statedb.Finalise(vmenv.ChainConfig().IsEIP158(block.Number()))
@@ -213,11 +222,12 @@ func TestTraceCall(t *testing.T) {
 			},
 			config:    nil,
 			expectErr: nil,
-			expect: &ethapi.ExecutionResult{
+			expect: &types.ExecutionResult{
+				L1DataFee:   (*hexutil.Big)(big.NewInt(0)),
 				Gas:         params.TxGas,
 				Failed:      false,
 				ReturnValue: "",
-				StructLogs:  []ethapi.StructLogRes{},
+				StructLogs:  []*types.StructLogRes{},
 			},
 		},
 		// Standard JSON trace upon the head, plain transfer.
@@ -230,11 +240,12 @@ func TestTraceCall(t *testing.T) {
 			},
 			config:    nil,
 			expectErr: nil,
-			expect: &ethapi.ExecutionResult{
+			expect: &types.ExecutionResult{
+				L1DataFee:   (*hexutil.Big)(big.NewInt(0)),
 				Gas:         params.TxGas,
 				Failed:      false,
 				ReturnValue: "",
-				StructLogs:  []ethapi.StructLogRes{},
+				StructLogs:  []*types.StructLogRes{},
 			},
 		},
 		// Standard JSON trace upon the non-existent block, error expects
@@ -259,11 +270,12 @@ func TestTraceCall(t *testing.T) {
 			},
 			config:    nil,
 			expectErr: nil,
-			expect: &ethapi.ExecutionResult{
+			expect: &types.ExecutionResult{
+				L1DataFee:   (*hexutil.Big)(big.NewInt(0)),
 				Gas:         params.TxGas,
 				Failed:      false,
 				ReturnValue: "",
-				StructLogs:  []ethapi.StructLogRes{},
+				StructLogs:  []*types.StructLogRes{},
 			},
 		},
 		// Standard JSON trace upon the pending block
@@ -276,11 +288,12 @@ func TestTraceCall(t *testing.T) {
 			},
 			config:    nil,
 			expectErr: nil,
-			expect: &ethapi.ExecutionResult{
+			expect: &types.ExecutionResult{
+				L1DataFee:   (*hexutil.Big)(big.NewInt(0)),
 				Gas:         params.TxGas,
 				Failed:      false,
 				ReturnValue: "",
-				StructLogs:  []ethapi.StructLogRes{},
+				StructLogs:  []*types.StructLogRes{},
 			},
 		},
 	}
@@ -329,11 +342,12 @@ func TestTraceTransaction(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to trace transaction %v", err)
 	}
-	if !reflect.DeepEqual(result, &ethapi.ExecutionResult{
+	if !reflect.DeepEqual(result, &types.ExecutionResult{
+		L1DataFee:   (*hexutil.Big)(big.NewInt(0)),
 		Gas:         params.TxGas,
 		Failed:      false,
 		ReturnValue: "",
-		StructLogs:  []ethapi.StructLogRes{},
+		StructLogs:  []*types.StructLogRes{},
 	}) {
 		t.Error("Transaction tracing result is different")
 	}

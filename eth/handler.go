@@ -24,20 +24,20 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/forkid"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/eth/downloader"
-	"github.com/ethereum/go-ethereum/eth/fetcher"
-	"github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethereum/go-ethereum/eth/protocols/snap"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/trie"
+	"github.com/scroll-tech/go-ethereum/common"
+	"github.com/scroll-tech/go-ethereum/core"
+	"github.com/scroll-tech/go-ethereum/core/forkid"
+	"github.com/scroll-tech/go-ethereum/core/types"
+	"github.com/scroll-tech/go-ethereum/eth/downloader"
+	"github.com/scroll-tech/go-ethereum/eth/fetcher"
+	"github.com/scroll-tech/go-ethereum/eth/protocols/eth"
+	"github.com/scroll-tech/go-ethereum/eth/protocols/snap"
+	"github.com/scroll-tech/go-ethereum/ethdb"
+	"github.com/scroll-tech/go-ethereum/event"
+	"github.com/scroll-tech/go-ethereum/log"
+	"github.com/scroll-tech/go-ethereum/p2p"
+	"github.com/scroll-tech/go-ethereum/params"
+	"github.com/scroll-tech/go-ethereum/trie"
 )
 
 const (
@@ -479,6 +479,10 @@ func (h *handler) BroadcastTransactions(txs types.Transactions) {
 	)
 	// Broadcast transactions to a batch of peers not knowing about it
 	for _, tx := range txs {
+		// L1 messages are not broadcast to peers
+		if tx.IsL1MessageTx() {
+			continue
+		}
 		peers := h.peers.peersWithoutTransaction(tx.Hash())
 		// Send the tx unconditionally to a subset of our peers
 		numDirect := int(math.Sqrt(float64(len(peers))))

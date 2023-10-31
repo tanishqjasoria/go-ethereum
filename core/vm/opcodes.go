@@ -120,6 +120,7 @@ const (
 	MSIZE    OpCode = 0x59
 	GAS      OpCode = 0x5a
 	JUMPDEST OpCode = 0x5b
+	PUSH0    OpCode = 0x5f
 )
 
 // 0x60 range - pushes.
@@ -207,13 +208,6 @@ const (
 	LOG4
 )
 
-// unofficial opcodes used for parsing.
-const (
-	PUSH OpCode = 0xb0 + iota
-	DUP
-	SWAP
-)
-
 // 0xf0 range - closures.
 const (
 	CREATE       OpCode = 0xf0
@@ -225,6 +219,7 @@ const (
 
 	STATICCALL   OpCode = 0xfa
 	REVERT       OpCode = 0xfd
+	INVALID      OpCode = 0xfe
 	SELFDESTRUCT OpCode = 0xff
 )
 
@@ -307,6 +302,7 @@ var opCodeToString = map[OpCode]string{
 	MSIZE:    "MSIZE",
 	GAS:      "GAS",
 	JUMPDEST: "JUMPDEST",
+	PUSH0:    "PUSH0",
 
 	// 0x60 range - push.
 	PUSH1:  "PUSH1",
@@ -390,11 +386,8 @@ var opCodeToString = map[OpCode]string{
 	CREATE2:      "CREATE2",
 	STATICCALL:   "STATICCALL",
 	REVERT:       "REVERT",
+	INVALID:      "INVALID",
 	SELFDESTRUCT: "SELFDESTRUCT",
-
-	PUSH: "PUSH",
-	DUP:  "DUP",
-	SWAP: "SWAP",
 }
 
 func (op OpCode) String() string {
@@ -473,6 +466,7 @@ var stringToOp = map[string]OpCode{
 	"MSIZE":          MSIZE,
 	"GAS":            GAS,
 	"JUMPDEST":       JUMPDEST,
+	"PUSH0":          PUSH0,
 	"PUSH1":          PUSH1,
 	"PUSH2":          PUSH2,
 	"PUSH3":          PUSH3,
@@ -548,6 +542,7 @@ var stringToOp = map[string]OpCode{
 	"RETURN":         RETURN,
 	"CALLCODE":       CALLCODE,
 	"REVERT":         REVERT,
+	"INVALID":        INVALID,
 	"SELFDESTRUCT":   SELFDESTRUCT,
 }
 

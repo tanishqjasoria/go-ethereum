@@ -27,18 +27,19 @@ import (
 	"path"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/tests"
 	"gopkg.in/urfave/cli.v1"
+
+	"github.com/scroll-tech/go-ethereum/common"
+	"github.com/scroll-tech/go-ethereum/common/hexutil"
+	"github.com/scroll-tech/go-ethereum/core"
+	"github.com/scroll-tech/go-ethereum/core/state"
+	"github.com/scroll-tech/go-ethereum/core/types"
+	"github.com/scroll-tech/go-ethereum/core/vm"
+	"github.com/scroll-tech/go-ethereum/crypto"
+	"github.com/scroll-tech/go-ethereum/log"
+	"github.com/scroll-tech/go-ethereum/params"
+	"github.com/scroll-tech/go-ethereum/rlp"
+	"github.com/scroll-tech/go-ethereum/tests"
 )
 
 const (
@@ -247,7 +248,7 @@ func Transition(ctx *cli.Context) error {
 	}
 	// Sanity check, to not `panic` in state_transition
 	if chainConfig.IsLondon(big.NewInt(int64(prestate.Env.Number))) {
-		if prestate.Env.BaseFee == nil {
+		if prestate.Env.BaseFee == nil && chainConfig.Scroll.BaseFeeEnabled() {
 			return NewError(ErrorConfig, errors.New("EIP-1559 config but missing 'currentBaseFee' in env section"))
 		}
 	}

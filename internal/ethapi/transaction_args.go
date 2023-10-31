@@ -23,12 +23,12 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/scroll-tech/go-ethereum/common"
+	"github.com/scroll-tech/go-ethereum/common/hexutil"
+	"github.com/scroll-tech/go-ethereum/common/math"
+	"github.com/scroll-tech/go-ethereum/core/types"
+	"github.com/scroll-tech/go-ethereum/log"
+	"github.com/scroll-tech/go-ethereum/rpc"
 )
 
 // TransactionArgs represents the arguments to construct a new transaction
@@ -45,7 +45,7 @@ type TransactionArgs struct {
 
 	// We accept "data" and "input" for backwards-compatibility reasons.
 	// "input" is the newer name and should be preferred by clients.
-	// Issue detail: https://github.com/ethereum/go-ethereum/issues/15628
+	// Issue detail: https://github.com/scroll-tech/go-ethereum/issues/15628
 	Data  *hexutil.Bytes `json:"data"`
 	Input *hexutil.Bytes `json:"input"`
 
@@ -93,10 +93,16 @@ func (args *TransactionArgs) setDefaults(ctx context.Context, b Backend) error {
 				args.MaxPriorityFeePerGas = (*hexutil.Big)(tip)
 			}
 			if args.MaxFeePerGas == nil {
-				gasFeeCap := new(big.Int).Add(
-					(*big.Int)(args.MaxPriorityFeePerGas),
-					new(big.Int).Mul(head.BaseFee, big.NewInt(2)),
-				)
+				var gasFeeCap *big.Int
+				if head.BaseFee != nil {
+					gasFeeCap = new(big.Int).Add(
+						(*big.Int)(args.MaxPriorityFeePerGas),
+						new(big.Int).Mul(head.BaseFee, big.NewInt(2)),
+					)
+				} else {
+					gasFeeCap = new(big.Int).Set(
+						(*big.Int)(args.MaxPriorityFeePerGas))
+				}
 				args.MaxFeePerGas = (*hexutil.Big)(gasFeeCap)
 			}
 			if args.MaxFeePerGas.ToInt().Cmp(args.MaxPriorityFeePerGas.ToInt()) < 0 {
@@ -115,7 +121,9 @@ func (args *TransactionArgs) setDefaults(ctx context.Context, b Backend) error {
 					// The legacy tx gas price suggestion should not add 2x base fee
 					// because all fees are consumed, so it would result in a spiral
 					// upwards.
-					price.Add(price, head.BaseFee)
+					if head.BaseFee != nil {
+						price.Add(price, head.BaseFee)
+					}
 				}
 				args.GasPrice = (*hexutil.Big)(price)
 			}

@@ -59,9 +59,10 @@ import (
 	"time"
 
 	"github.com/cespare/cp"
-	"github.com/ethereum/go-ethereum/crypto/signify"
-	"github.com/ethereum/go-ethereum/internal/build"
-	"github.com/ethereum/go-ethereum/params"
+
+	"github.com/scroll-tech/go-ethereum/crypto/signify"
+	"github.com/scroll-tech/go-ethereum/internal/build"
+	"github.com/scroll-tech/go-ethereum/params"
 )
 
 var (
@@ -198,9 +199,10 @@ func main() {
 
 func doInstall(cmdline []string) {
 	var (
-		dlgo = flag.Bool("dlgo", false, "Download Go and build with it")
-		arch = flag.String("arch", "", "Architecture to cross build for")
-		cc   = flag.String("cc", "", "C compiler to cross build with")
+		dlgo      = flag.Bool("dlgo", false, "Download Go and build with it")
+		arch      = flag.String("arch", "", "Architecture to cross build for")
+		cc        = flag.String("cc", "", "C compiler to cross build with")
+		buildtags = flag.String("buildtags", "", "Tags for go build")
 	)
 	flag.CommandLine.Parse(cmdline)
 
@@ -214,12 +216,15 @@ func doInstall(cmdline []string) {
 	// Configure the build.
 	env := build.Env()
 	gobuild := tc.Go("build", buildFlags(env)...)
+	if len(*buildtags) != 0 {
+		gobuild.Args = append(gobuild.Args, "-tags", *buildtags)
+	}
 
 	// arm64 CI builders are memory-constrained and can't handle concurrent builds,
 	// better disable it. This check isn't the best, it should probably
 	// check for something in env instead.
 	if env.CI && runtime.GOARCH == "arm64" {
-		gobuild.Args = append(gobuild.Args, "-p", "1")
+		gobuild.Args = append(gobuild.Args, "-p", strconv.Itoa(runtime.NumCPU()))
 	}
 
 	// We use -trimpath to avoid leaking local paths into the built executables.
@@ -293,7 +298,7 @@ func doTest(cmdline []string) {
 
 	// Test a single package at a time. CI builders are slow
 	// and some tests run into timeouts under load.
-	gotest.Args = append(gotest.Args, "-p", "1")
+	gotest.Args = append(gotest.Args, "-p", strconv.Itoa(runtime.NumCPU()))
 	if *coverage {
 		gotest.Args = append(gotest.Args, "-covermode=atomic", "-cover")
 	}
@@ -331,7 +336,7 @@ func doLint(cmdline []string) {
 
 // downloadLinter downloads and unpacks golangci-lint.
 func downloadLinter(cachedir string) string {
-	const version = "1.42.0"
+	const version = "1.46.2"
 
 	csdb := build.MustLoadChecksums("build/checksums.txt")
 	base := fmt.Sprintf("golangci-lint-%s-%s-%s", version, runtime.GOOS, runtime.GOARCH)
@@ -1001,7 +1006,7 @@ func doAndroidArchive(cmdline []string) {
 	build.MustRun(tc.Go("mod", "download"))
 
 	// Build the Android archive and Maven resources
-	build.MustRun(gomobileTool("bind", "-ldflags", "-s -w", "--target", "android", "--javapkg", "org.ethereum", "-v", "github.com/ethereum/go-ethereum/mobile"))
+	build.MustRun(gomobileTool("bind", "-ldflags", "-s -w", "--target", "android", "--javapkg", "org.ethereum", "-v", "github.com/scroll-tech/go-ethereum/mobile"))
 
 	if *local {
 		// If we're building locally, copy bundle to build dir and skip Maven
@@ -1130,7 +1135,7 @@ func doXCodeFramework(cmdline []string) {
 	build.MustRun(tc.Go("mod", "download"))
 
 	// Build the iOS XCode framework
-	bind := gomobileTool("bind", "-ldflags", "-s -w", "--target", "ios", "-v", "github.com/ethereum/go-ethereum/mobile")
+	bind := gomobileTool("bind", "-ldflags", "-s -w", "--target", "ios", "-v", "github.com/scroll-tech/go-ethereum/mobile")
 
 	if *local {
 		// If we're building locally, use the build folder and stop afterwards

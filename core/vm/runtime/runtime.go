@@ -21,12 +21,12 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/scroll-tech/go-ethereum/common"
+	"github.com/scroll-tech/go-ethereum/core/rawdb"
+	"github.com/scroll-tech/go-ethereum/core/state"
+	"github.com/scroll-tech/go-ethereum/core/vm"
+	"github.com/scroll-tech/go-ethereum/crypto"
+	"github.com/scroll-tech/go-ethereum/params"
 )
 
 // Config is a basic type specifying certain configuration flags for running
@@ -68,6 +68,7 @@ func setDefaults(cfg *Config) {
 			MuirGlacierBlock:    new(big.Int),
 			BerlinBlock:         new(big.Int),
 			LondonBlock:         new(big.Int),
+			ArchimedesBlock:     new(big.Int),
 		}
 	}
 
@@ -119,7 +120,7 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 		sender  = vm.AccountRef(cfg.Origin)
 	)
 	if rules := cfg.ChainConfig.Rules(vmenv.Context.BlockNumber); rules.IsBerlin {
-		cfg.State.PrepareAccessList(cfg.Origin, &address, vm.ActivePrecompiles(rules), nil)
+		cfg.State.PrepareAccessList(rules, cfg.Origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
 	}
 	cfg.State.CreateAccount(address)
 	// set the receiver's (the executing contract) code for execution.
@@ -151,7 +152,7 @@ func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
 		sender = vm.AccountRef(cfg.Origin)
 	)
 	if rules := cfg.ChainConfig.Rules(vmenv.Context.BlockNumber); rules.IsBerlin {
-		cfg.State.PrepareAccessList(cfg.Origin, nil, vm.ActivePrecompiles(rules), nil)
+		cfg.State.PrepareAccessList(rules, cfg.Origin, cfg.Coinbase, nil, vm.ActivePrecompiles(rules), nil)
 	}
 	// Call the code with the given configuration.
 	code, address, leftOverGas, err := vmenv.Create(
@@ -177,7 +178,7 @@ func Call(address common.Address, input []byte, cfg *Config) ([]byte, uint64, er
 	statedb := cfg.State
 
 	if rules := cfg.ChainConfig.Rules(vmenv.Context.BlockNumber); rules.IsBerlin {
-		statedb.PrepareAccessList(cfg.Origin, &address, vm.ActivePrecompiles(rules), nil)
+		statedb.PrepareAccessList(rules, cfg.Origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
 	}
 	// Call the code with the given configuration.
 	ret, leftOverGas, err := vmenv.Call(
