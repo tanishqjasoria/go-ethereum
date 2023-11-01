@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/scroll-tech/go-ethereum/light"
+	"github.com/ethereum/go-ethereum/light"
 )
 
 var (

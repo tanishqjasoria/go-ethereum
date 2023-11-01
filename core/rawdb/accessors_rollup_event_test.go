@@ -3,7 +3,7 @@ package rawdb
 import (
 	"testing"
 
-	"github.com/scroll-tech/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func TestWriteRollupEventSyncedL1BlockNumber(t *testing.T) {

@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"fmt"
 
-	zktrie "github.com/scroll-tech/zktrie/trie"
-	zkt "github.com/scroll-tech/zktrie/types"
+	zktrie "github.com/ethereum/zktrie/trie"
+	zkt "github.com/ethereum/zktrie/types"
 
-	"github.com/scroll-tech/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/ethdb"
 )
 
 // Pick Node from its hash directly from database, notice it has different

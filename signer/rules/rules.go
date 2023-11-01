@@ -24,11 +24,11 @@ import (
 
 	"github.com/dop251/goja"
 
-	"github.com/scroll-tech/go-ethereum/internal/ethapi"
-	"github.com/scroll-tech/go-ethereum/internal/jsre/deps"
-	"github.com/scroll-tech/go-ethereum/log"
-	"github.com/scroll-tech/go-ethereum/signer/core"
-	"github.com/scroll-tech/go-ethereum/signer/storage"
+	"github.com/ethereum/go-ethereum/internal/ethapi"
+	"github.com/ethereum/go-ethereum/internal/jsre/deps"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/signer/core"
+	"github.com/ethereum/go-ethereum/signer/storage"
 )
 
 var (

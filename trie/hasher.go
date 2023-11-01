@@ -21,8 +21,8 @@ import (
 
 	"golang.org/x/crypto/sha3"
 
-	"github.com/scroll-tech/go-ethereum/crypto"
-	"github.com/scroll-tech/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 type sliceBuffer []byte

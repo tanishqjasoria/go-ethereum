@@ -5,10 +5,10 @@ import (
 
 	"github.com/syndtr/goleveldb/leveldb"
 
-	zktrie "github.com/scroll-tech/zktrie/trie"
+	zktrie "github.com/ethereum/zktrie/trie"
 
-	"github.com/scroll-tech/go-ethereum/common"
-	"github.com/scroll-tech/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
 )
 
 // ZktrieDatabase Database adaptor implements zktrie.ZktrieDatbase

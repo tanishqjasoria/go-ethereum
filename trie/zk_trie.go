@@ -19,14 +19,14 @@ package trie
 import (
 	"fmt"
 
-	zktrie "github.com/scroll-tech/zktrie/trie"
-	zkt "github.com/scroll-tech/zktrie/types"
+	zktrie "github.com/ethereum/zktrie/trie"
+	zkt "github.com/ethereum/zktrie/types"
 
-	"github.com/scroll-tech/go-ethereum/common"
-	"github.com/scroll-tech/go-ethereum/core/types"
-	"github.com/scroll-tech/go-ethereum/crypto/poseidon"
-	"github.com/scroll-tech/go-ethereum/ethdb"
-	"github.com/scroll-tech/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto/poseidon"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 var magicHash []byte = []byte("THIS IS THE MAGIC INDEX FOR ZKTRIE")

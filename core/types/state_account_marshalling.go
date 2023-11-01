@@ -23,9 +23,9 @@ import (
 
 	"github.com/iden3/go-iden3-crypto/utils"
 
-	zkt "github.com/scroll-tech/zktrie/types"
+	zkt "github.com/ethereum/zktrie/types"
 
-	"github.com/scroll-tech/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 var (

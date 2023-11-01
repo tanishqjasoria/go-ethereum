@@ -3,13 +3,13 @@ package state
 import (
 	"fmt"
 
-	zkt "github.com/scroll-tech/zktrie/types"
+	zkt "github.com/ethereum/zktrie/types"
 
-	zktrie "github.com/scroll-tech/go-ethereum/trie"
+	zktrie "github.com/ethereum/go-ethereum/trie"
 
-	"github.com/scroll-tech/go-ethereum/common"
-	"github.com/scroll-tech/go-ethereum/crypto"
-	"github.com/scroll-tech/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb"
 )
 
 type TrieProve interface {

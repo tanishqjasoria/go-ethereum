@@ -19,8 +19,8 @@ package les
 import (
 	"time"
 
-	"github.com/scroll-tech/go-ethereum/common/bitutil"
-	"github.com/scroll-tech/go-ethereum/light"
+	"github.com/ethereum/go-ethereum/common/bitutil"
+	"github.com/ethereum/go-ethereum/light"
 )
 
 const (

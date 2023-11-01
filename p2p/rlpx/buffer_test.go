@@ -22,7 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/scroll-tech/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 func TestReadBufferReset(t *testing.T) {
