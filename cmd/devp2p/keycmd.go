@@ -20,9 +20,10 @@ import (
 	"fmt"
 	"net"
 
+	"gopkg.in/urfave/cli.v1"
+
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/p2p/enode"
-	"gopkg.in/urfave/cli.v1"
 )
 
 var (

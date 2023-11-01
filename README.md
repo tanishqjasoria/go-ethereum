@@ -7,10 +7,17 @@ https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/6874
 )](https://pkg.go.dev/github.com/ethereum/go-ethereum?tab=doc)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ethereum/go-ethereum)](https://goreportcard.com/report/github.com/ethereum/go-ethereum)
 [![Travis](https://travis-ci.com/ethereum/go-ethereum.svg?branch=master)](https://travis-ci.com/ethereum/go-ethereum)
-[![Discord](https://img.shields.io/badge/discord-join%20chat-blue.svg)](https://discord.gg/nthXNEv)
+[![Discord](https://img.shields.io/badge/discord-join%20chat-blue.svg)](https://discord.gg/2stGbxwb)
 
-Automated builds are available for stable releases and the unstable master branch. Binary
-archives are published at https://geth.ethereum.org/downloads/.
+## ZK-Rollup
+
+ZK-Rollup adapts the Go Ethereum to run as Layer 2 Sequencer. The codebase is based on v1.10.13.
+
+### ZKTrie Storage
+
+Another implement for storage trie, base on patricia merkle tree, has been induced. It is feasible to zk proving in the storage part. It is specified as a flag in gensis, set `config.scroll.useZktrie` to true for enabling it.
+
+Notice current the snapshot would be disabled by the zktrie implement.
 
 ## Building the source
 

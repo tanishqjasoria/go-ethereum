@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/VictoriaMetrics/fastcache"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -43,10 +44,12 @@ func randomHash() common.Hash {
 func randomAccount() []byte {
 	root := randomHash()
 	a := Account{
-		Balance:  big.NewInt(rand.Int63()),
-		Nonce:    rand.Uint64(),
-		Root:     root[:],
-		CodeHash: emptyCode[:],
+		Balance:          big.NewInt(rand.Int63()),
+		Nonce:            rand.Uint64(),
+		Root:             root[:],
+		KeccakCodeHash:   emptyKeccakCode[:],
+		PoseidonCodeHash: emptyPoseidonCode[:],
+		CodeSize:         0,
 	}
 	data, _ := rlp.EncodeToBytes(a)
 	return data

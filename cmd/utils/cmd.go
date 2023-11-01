@@ -30,6 +30,8 @@ import (
 	"syscall"
 	"time"
 
+	"gopkg.in/urfave/cli.v1"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/rawdb"
@@ -41,7 +43,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/rlp"
-	"gopkg.in/urfave/cli.v1"
 )
 
 const (

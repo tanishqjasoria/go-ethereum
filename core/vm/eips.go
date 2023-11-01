@@ -20,11 +20,14 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
+
+	"github.com/ethereum/go-ethereum/params"
 )
 
 var activators = map[int]func(*JumpTable){
+	3855: enable3855,
+	3860: enable3860,
 	3529: enable3529,
 	3198: enable3198,
 	2929: enable2929,
@@ -141,10 +144,9 @@ func enable2929(jt *JumpTable) {
 	jt[DELEGATECALL].constantGas = params.WarmStorageReadCostEIP2929
 	jt[DELEGATECALL].dynamicGas = gasDelegateCallEIP2929
 
-	// This was previously part of the dynamic cost, but we're using it as a constantGas
-	// factor here
-	jt[SELFDESTRUCT].constantGas = params.SelfdestructGasEIP150
-	jt[SELFDESTRUCT].dynamicGas = gasSelfdestructEIP2929
+	// SELFDESTRUCT is disabled in Scroll
+	// jt[SELFDESTRUCT].constantGas = params.SelfdestructGasEIP150
+	// jt[SELFDESTRUCT].dynamicGas = gasSelfdestructEIP2929
 }
 
 // enable3529 enabled "EIP-3529: Reduction in refunds":
@@ -153,7 +155,9 @@ func enable2929(jt *JumpTable) {
 // - Reduces max refunds to 20% gas
 func enable3529(jt *JumpTable) {
 	jt[SSTORE].dynamicGas = gasSStoreEIP3529
-	jt[SELFDESTRUCT].dynamicGas = gasSelfdestructEIP3529
+
+	// SELFDESTRUCT is disabled in Scroll
+	// jt[SELFDESTRUCT].dynamicGas = gasSelfdestructEIP3529
 }
 
 // enable3198 applies EIP-3198 (BASEFEE Opcode)
@@ -173,4 +177,28 @@ func opBaseFee(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]
 	baseFee, _ := uint256.FromBig(interpreter.evm.Context.BaseFee)
 	scope.Stack.push(baseFee)
 	return nil, nil
+}
+
+// enable3855 applies EIP-3855 (PUSH0 opcode)
+func enable3855(jt *JumpTable) {
+	// New opcode
+	jt[PUSH0] = &operation{
+		execute:     opPush0,
+		constantGas: GasQuickStep,
+		minStack:    minStack(0, 1),
+		maxStack:    maxStack(0, 1),
+	}
+}
+
+// opPush0 implements the PUSH0 opcode
+func opPush0(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.push(new(uint256.Int))
+	return nil, nil
+}
+
+// ebnable3860 enables "EIP-3860: Limit and meter initcode"
+// https://eips.ethereum.org/EIPS/eip-3860
+func enable3860(jt *JumpTable) {
+	jt[CREATE].dynamicGas = gasCreateEip3860
+	jt[CREATE2].dynamicGas = gasCreate2Eip3860
 }

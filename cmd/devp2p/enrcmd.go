@@ -28,10 +28,11 @@ import (
 	"strconv"
 	"strings"
 
+	"gopkg.in/urfave/cli.v1"
+
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/p2p/enr"
 	"github.com/ethereum/go-ethereum/rlp"
-	"gopkg.in/urfave/cli.v1"
 )
 
 var enrdumpCommand = cli.Command{

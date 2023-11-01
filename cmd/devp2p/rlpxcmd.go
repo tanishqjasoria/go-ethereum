@@ -20,13 +20,14 @@ import (
 	"fmt"
 	"net"
 
+	"gopkg.in/urfave/cli.v1"
+
 	"github.com/ethereum/go-ethereum/cmd/devp2p/internal/ethtest"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/internal/utesting"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/rlpx"
 	"github.com/ethereum/go-ethereum/rlp"
-	"gopkg.in/urfave/cli.v1"
 )
 
 var (

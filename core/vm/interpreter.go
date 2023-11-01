@@ -74,6 +74,8 @@ func NewEVMInterpreter(evm *EVM, cfg Config) *EVMInterpreter {
 	if cfg.JumpTable[STOP] == nil {
 		var jt JumpTable
 		switch {
+		case evm.chainRules.IsShanghai:
+			jt = shanghaiInstructionSet
 		case evm.chainRules.IsLondon:
 			jt = londonInstructionSet
 		case evm.chainRules.IsBerlin:
@@ -247,12 +249,15 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			if err != nil || !contract.UseGas(dynamicCost) {
 				return nil, ErrOutOfGas
 			}
-		}
-		if memorySize > 0 {
-			mem.Resize(memorySize)
-		}
-
-		if in.cfg.Debug {
+			// Do tracing before memory expansion
+			if in.cfg.Debug {
+				in.cfg.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
+				logged = true
+			}
+			if memorySize > 0 {
+				mem.Resize(memorySize)
+			}
+		} else if in.cfg.Debug {
 			in.cfg.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
 			logged = true
 		}
@@ -263,6 +268,10 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		// set the last return to the result of the operation.
 		if operation.returns {
 			in.returnData = res
+		}
+
+		if in.cfg.Debug {
+			in.cfg.Tracer.CaptureStateAfter(pc, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
 		}
 
 		switch {
