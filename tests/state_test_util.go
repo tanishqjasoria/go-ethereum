@@ -24,6 +24,8 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/crypto/sha3"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -37,7 +39,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
-	"golang.org/x/crypto/sha3"
+	"github.com/ethereum/go-ethereum/rollup/fees"
 )
 
 // StateTest checks transaction processing without block context.
@@ -200,9 +202,9 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 		return nil, nil, common.Hash{}, err
 	}
 
+	var ttx types.Transaction
 	// Try to recover tx with current signer
 	if len(post.TxBytes) != 0 {
-		var ttx types.Transaction
 		err := ttx.UnmarshalBinary(post.TxBytes)
 		if err != nil {
 			return nil, nil, common.Hash{}, err
@@ -215,7 +217,7 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 
 	// Prepare the EVM.
 	txContext := core.NewEVMTxContext(msg)
-	context := core.NewEVMBlockContext(block.Header(), nil, &t.json.Env.Coinbase)
+	context := core.NewEVMBlockContext(block.Header(), nil, config, &t.json.Env.Coinbase)
 	context.GetHash = vmTestBlockHash
 	context.BaseFee = baseFee
 	evm := vm.NewEVM(context, txContext, statedb, config, vmconfig)
@@ -224,7 +226,13 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 	snapshot := statedb.Snapshot()
 	gaspool := new(core.GasPool)
 	gaspool.AddGas(block.GasLimit())
-	if _, err := core.ApplyMessage(evm, msg, gaspool); err != nil {
+
+	l1DataFee, err := fees.CalculateL1DataFee(&ttx, statedb)
+	if err != nil {
+		return nil, nil, common.Hash{}, err
+	}
+
+	if _, err = core.ApplyMessage(evm, msg, gaspool, l1DataFee); err != nil {
 		statedb.RevertToSnapshot(snapshot)
 	}
 

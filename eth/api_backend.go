@@ -53,6 +53,10 @@ func (b *EthAPIBackend) ChainConfig() *params.ChainConfig {
 	return b.eth.blockchain.Config()
 }
 
+func (b *EthAPIBackend) CacheConfig() *core.CacheConfig {
+	return b.eth.blockchain.CacheConfig()
+}
+
 func (b *EthAPIBackend) CurrentBlock() *types.Block {
 	return b.eth.blockchain.CurrentBlock()
 }
@@ -207,7 +211,7 @@ func (b *EthAPIBackend) GetEVM(ctx context.Context, msg core.Message, state *sta
 		vmConfig = b.eth.blockchain.GetVMConfig()
 	}
 	txContext := core.NewEVMTxContext(msg)
-	context := core.NewEVMBlockContext(header, b.eth.BlockChain(), nil)
+	context := core.NewEVMBlockContext(header, b.eth.BlockChain(), b.eth.blockchain.Config(), nil)
 	return vm.NewEVM(context, txContext, state, b.eth.blockchain.Config(), *vmConfig), vmError, nil
 }
 
@@ -236,6 +240,7 @@ func (b *EthAPIBackend) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscri
 }
 
 func (b *EthAPIBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {
+	// will `VerifyFee` & `validateTx` in txPool.AddLocal
 	return b.eth.txPool.AddLocal(signedTx)
 }
 

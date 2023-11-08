@@ -51,6 +51,10 @@ func (b *LesApiBackend) ChainConfig() *params.ChainConfig {
 	return b.eth.chainConfig
 }
 
+func (b *LesApiBackend) CacheConfig() *core.CacheConfig {
+	return nil
+}
+
 func (b *LesApiBackend) CurrentBlock() *types.Block {
 	return types.NewBlockWithHeader(b.eth.BlockChain().CurrentHeader())
 }
@@ -187,11 +191,12 @@ func (b *LesApiBackend) GetEVM(ctx context.Context, msg core.Message, state *sta
 		vmConfig = new(vm.Config)
 	}
 	txContext := core.NewEVMTxContext(msg)
-	context := core.NewEVMBlockContext(header, b.eth.blockchain, nil)
+	context := core.NewEVMBlockContext(header, b.eth.blockchain, b.eth.chainConfig, nil)
 	return vm.NewEVM(context, txContext, state, b.eth.chainConfig, *vmConfig), state.Error, nil
 }
 
 func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {
+	// will `VerifyFee` & `validateTx` in txPool.Add
 	return b.eth.txPool.Add(ctx, signedTx)
 }
 
