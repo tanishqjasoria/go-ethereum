@@ -958,8 +958,8 @@ func opPush1(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]by
 		if !scope.Contract.IsDeployment && interpreter.evm.chainRules.IsVerkle && *pc%31 == 0 {
 			// touch next chunk if PUSH1 is at the boundary. if so, *pc has
 			// advanced past this boundary.
-			contractAddr := scope.Contract.Address()
-			statelessGas := interpreter.evm.Accesses.TouchCodeChunksRangeAndChargeGas(contractAddr[:], *pc+1, uint64(1), uint64(len(scope.Contract.Code)), false)
+			codeAddr := scope.Contract.CodeAddr
+			statelessGas := interpreter.evm.Accesses.TouchCodeChunksRangeAndChargeGas(codeAddr[:], *pc+1, uint64(1), uint64(len(scope.Contract.Code)), false)
 			if !scope.Contract.UseGas(statelessGas) {
 				scope.Contract.Gas = 0
 				return nil, ErrOutOfGas
@@ -987,8 +987,8 @@ func makePush(size uint64, pushByteSize int) executionFunc {
 		}
 
 		if !scope.Contract.IsDeployment && interpreter.evm.chainRules.IsVerkle {
-			contractAddr := scope.Contract.Address()
-			statelessGas := interpreter.evm.Accesses.TouchCodeChunksRangeAndChargeGas(contractAddr[:], uint64(startMin), uint64(pushByteSize), uint64(len(scope.Contract.Code)), false)
+			codeAddr := scope.Contract.CodeAddr
+			statelessGas := interpreter.evm.Accesses.TouchCodeChunksRangeAndChargeGas(codeAddr[:], uint64(startMin), uint64(pushByteSize), uint64(len(scope.Contract.Code)), false)
 			if !scope.Contract.UseGas(statelessGas) {
 				scope.Contract.Gas = 0
 				return nil, ErrOutOfGas
