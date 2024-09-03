@@ -368,10 +368,10 @@ func opCodeCopy(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([
 		uint64CodeOffset = 0xffffffffffffffff
 	}
 
-	contractAddr := scope.Contract.Address()
+	codeAddr := scope.Contract.CodeAddr
 	paddedCodeCopy, copyOffset, nonPaddedCopyLength := getDataAndAdjustedBounds(scope.Contract.Code, uint64CodeOffset, length.Uint64())
 	if interpreter.evm.chainRules.IsEIP4762 && !scope.Contract.IsDeployment {
-		statelessGas := interpreter.evm.Accesses.TouchCodeChunksRangeAndChargeGas(contractAddr[:], copyOffset, nonPaddedCopyLength, uint64(len(scope.Contract.Code)), false)
+		statelessGas := interpreter.evm.Accesses.TouchCodeChunksRangeAndChargeGas(codeAddr[:], copyOffset, nonPaddedCopyLength, uint64(len(scope.Contract.Code)), false)
 		if !scope.Contract.UseGas(statelessGas) {
 			scope.Contract.Gas = 0
 			return nil, ErrOutOfGas
